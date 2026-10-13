@@ -3,6 +3,7 @@ package com.freightfox.tollplaza.loader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -19,19 +20,20 @@ public class TollPlazaDataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Load directly from the classpath root where Maven packages resources
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("data/toll_plaza_india.csv");
+        List<TollPlazaRecord> records;
 
-        if (inputStream == null) {
-            inputStream = getClass().getResourceAsStream("/data/toll_plaza_india.csv");
+        // Use Spring's ClassPathResource which is robust inside executable JARs/Docker
+        ClassPathResource resource = new ClassPathResource("data/toll_plaza_india.csv");
+        if (!resource.exists()) {
+            resource = new ClassPathResource("/data/toll_plaza_india.csv");
         }
 
-        if (inputStream == null) {
-            log.error("CRITICAL: data/toll_plaza_india.csv not found in classpath!");
+        try (InputStream inputStream = resource.getInputStream()) {
+            records = csvParser.parse(inputStream);
+        } catch (Exception e) {
+            log.error("CRITICAL: Failed to open toll plaza CSV from classpath: {}", e.getMessage());
             return;
         }
-
-        List<TollPlazaRecord> records = csvParser.parse(inputStream);
 
         if (records.isEmpty()) {
             log.warn("No toll plaza records found in CSV!");
