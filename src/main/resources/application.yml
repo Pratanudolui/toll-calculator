@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: toll-plaza-finder
+  datasource:
+    url: jdbc:h2:file:./data/tolldb;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  cache:
+    type: simple
+
+toll:
+  corridor:
+    # Perpendicular distance (km) from the straight-line simulated route within
+    # which a toll plaza is considered "on" the route.
+    width-km: 25
+    # Extra slack (km) beyond the source/destination endpoints along the route.
+    endpoint-buffer-km: 15
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    com.freightfox.tollplaza: INFO

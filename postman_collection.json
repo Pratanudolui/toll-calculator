@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "Toll Plaza Finder API",
+    "description": "FreightFox backend assignment - toll plazas between two pincodes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Find toll plazas - valid route",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourcePincode\": \"560064\",\n  \"destinationPincode\": \"411045\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/toll-plazas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "toll-plazas"] }
+      }
+    },
+    {
+      "name": "Same source and destination (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourcePincode\": \"110001\",\n  \"destinationPincode\": \"110001\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/toll-plazas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "toll-plazas"] }
+      }
+    },
+    {
+      "name": "Invalid pincode format (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourcePincode\": \"ABCDE\",\n  \"destinationPincode\": \"560001\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/toll-plazas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "toll-plazas"] }
+      }
+    },
+    {
+      "name": "Unresolvable pincode (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourcePincode\": \"999999\",\n  \"destinationPincode\": \"560001\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/toll-plazas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "toll-plazas"] }
+      }
+    }
+  ]
+}
