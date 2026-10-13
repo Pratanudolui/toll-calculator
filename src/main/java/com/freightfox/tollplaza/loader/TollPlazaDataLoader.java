@@ -7,35 +7,56 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.List;
 
-/**
- * Loads the bundled toll plaza CSV into the database on startup.
- *
- * <p>Uses H2's {@code MERGE ... KEY(...)} to upsert on (name, latitude, longitude),
- * so re-running the app (e.g. against a persistent file-based H2 database) never
- * creates duplicate rows, and the whole file loads as a single batch statement
- * rather than one round trip per row.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class TollPlazaDataLoader implements CommandLineRunner {
-
-    private static final String CSV_CLASSPATH_LOCATION = "data/toll_plaza_india.csv";
 
     private final TollPlazaCsvParser csvParser;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public void run(String... args) throws Exception {
-        List<TollPlazaRecord> records;
-        try (var inputStream = new ClassPathResource(CSV_CLASSPATH_LOCATION).getInputStream()) {
-            records = csvParser.parse(inputStream);
+        List<TollPlazaRecord> records = null;
+
+        // Attempt 1: Load via Spring ClassPathResource
+        try {
+            ClassPathResource resource = new ClassPathResource("data/toll_plaza_india.csv");
+            if (resource.exists()) {
+                try (InputStream inputStream = resource.getInputStream()) {
+                    records = csvParser.parse(inputStream);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ClassPathResource lookup failed: {}", e.getMessage());
         }
 
-        if (records.isEmpty()) {
-            log.warn("No toll plaza records found in {}", CSV_CLASSPATH_LOCATION);
+        // Attempt 2: Direct file system fallbacks for cloud containers / Docker
+        if (records == null || records.isEmpty()) {
+            File[] possibleFiles = {
+                    new File("src/main/resources/data/toll_plaza_india.csv"),
+                    new File("data/toll_plaza_india.csv"),
+                    new File("toll_plaza_india.csv")
+            };
+
+            for (File file : possibleFiles) {
+                if (file.exists()) {
+                    log.info("Loading CSV from file path: {}", file.getAbsolutePath());
+                    try (InputStream inputStream = new FileInputStream(file)) {
+                        records = csvParser.parse(inputStream);
+                        if (!records.isEmpty()) break;
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        if (records == null || records.isEmpty()) {
+            log.error("CRITICAL: No toll plaza records found in any location!");
             return;
         }
 
@@ -48,6 +69,6 @@ public class TollPlazaDataLoader implements CommandLineRunner {
                         + "KEY (name, latitude, longitude) VALUES (?, ?, ?, ?)",
                 batchArgs);
 
-        log.info("Upserted {} toll plaza records from {}", results.length, CSV_CLASSPATH_LOCATION);
+        log.info("Successfully upserted {} toll plaza records.", results.length);
     }
 }
