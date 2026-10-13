@@ -8,8 +8,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Comparator;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -25,11 +23,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .min(Comparator.comparing(fe -> fe.getField()))
-                .map(fe -> fe.getDefaultMessage())
-                .orElse("Invalid request");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("Invalid source or destination pincode"));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
